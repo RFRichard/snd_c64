@@ -1,0 +1,1531 @@
+     
+; FOR PASS=1 TO 3
+; ORG 20224,0
+; IF PASS=3 THEN ORG 20224,1
+     
+;IRQSET
+     SEI
+     LDA #36
+     STA 788
+     LDA #79
+     STA 789
+     LDA #30
+     STA 53266 ; raster counter
+     LDA 53265
+     AND #127
+     STA 53265
+     LDA #1
+     STA 53274
+     STA 56333
+     CLI
+     
+     JMP SETUP
+     
+;PRINT*;IRQ BACK
+     
+     LDA #15
+     STA 53273
+     LDA #67
+     STA 788
+     LDA #79
+     STA 789
+     LDA #154
+     STA 53266
+     LDA #3
+     STA 53281
+     STA 53281
+     JMP $EA31
+     
+;PRINT*
+     
+     LDA #15
+     STA 53273
+     LDA #98
+     STA 788
+     LDA #79
+     STA 789
+     LDA 251
+     STA 53266
+     LDA 250
+     STA 53281
+     STA 53281
+     JMP $EA31
+     
+;PRINT*
+     
+     LDA #15
+     STA 53273	 ; interupt register
+     LDA #124
+     STA 788
+     LDA #251
+     STA 53266
+     LDA #0
+     STA 53280
+     STA 53281
+     JMP $EA31
+     
+;PRINT *
+     
+IRQ1:
+     SEI
+; ? POKE 53273,15 ; interupt register
+     LDA #0
+     STA 53266 ; raster counter
+     LDA #250
+     STA 788
+
+J2:
+     LDA 838
+     CMP #0
+     BEQ JO
+     CMP #1
+     BEQ MMR
+     CMP #2
+     BNE JO
+     LDA 1543
+     STA 840
+     LDA #0
+     STA 838
+     LDY #39
+     LDX #38
+
+B7:
+     LDA 1504,X
+     STA 1504,Y
+     DEY
+     DEX
+     CPY #0
+     BNE B7
+     LDA 840
+     STA 1504
+     JMP JO
+
+MMR:
+     LDA 1504
+     STA 840
+     LDA #0
+     STA 838
+     LDY #1
+     LDX #0
+
+B8:
+     LDA 1504,Y
+     STA 1504,X
+     INY
+     INX
+     CPY #40
+     BNE B8
+     LDA 840
+     STA 1543
+
+JO:
+     INC 53286
+     LDA 871
+     CMP #0
+     BNE IO11
+     LDA 870
+     STA 871
+     LDA #0
+     STA 872
+     JSR MCCC
+
+IO11:
+     DEC 871
+
+IO12:
+     CLI
+     JMP $EA31
+; PRINT *
+
+IRQ2:
+     SEI
+;POKE 53273,15
+     LDA #10
+     STA 53266
+     LDA #197
+     STA 788
+     LDA #81
+     STA 789
+     LDA 874
+     CMP #1
+     BNE JDMO
+     LDA 846
+     CMP #1
+     BNE JD2
+     JSR POL2
+     LDA #0
+     STA 846
+     LDA #12
+     STA 874
+     JMP JDMO
+
+JD2:
+     JSR POL1
+     LDA #1
+     STA 846
+     LDA #12
+     STA 874
+
+JDMO:
+     DEC 874
+     LDA 880
+     CMP #1
+     BEQ JVOK
+     JMP JOV
+
+JVOK:
+     LDA 874
+     CMP #10
+     BEQ CJM
+     CMP #4
+     BEQ CJM
+     JMP JOV
+
+CJM:
+; read joystick port 2
+     LDA 56320
+     CMP #119
+     BEQ MPL		; move plane left
+     CMP #123
+     BEQ MPR		; move plane right
+     CMP #126
+     BEQ MPD		; move plane down
+     CMP #125		
+     BEQ MPU		; move plane up
+     CMP #122
+     BEQ MPRU		; move plane up and right
+     CMP #118
+     BEQ MPLU		; move plane up and left
+     JMP MFR
+
+MPR:
+     LDA 2040
+     CMP #231
+     BEQ DEP
+     INC 2040
+     JMP JOV
+
+DEP:
+     LDA #224
+     STA 2040
+     JMP JOV
+
+SER:
+     LDA #0
+     STA 844
+     JMP JOV
+
+MPL:
+     LDA 2040
+     CMP #224
+     BEQ DOP
+     DEC 2040
+     JMP JOV
+
+DOP:
+     LDA #231
+     STA 2040
+     JMP JOV
+
+MPD:
+     LDA 251
+     CMP #163
+     BEQ JOV
+     LDA 870
+     CMP #1
+     BEQ DRCH
+     DEC 870
+
+DRCH:
+     DEC 251
+     LDA 882
+     CMP #1
+     BEQ MPL
+     CMP #2
+     BEQ MPR
+     JMP JOV
+
+MPU:
+     LDA 251
+     CMP #185
+     BEQ JOV
+     LDA 870
+     CMP #8
+     BEQ DORCH
+     INC 870
+
+DORCH:
+     INC 251
+     LDA 882
+     CMP #1
+     BEQ MPL
+     CMP #2
+     BEQ MPR
+     JMP JOV
+
+MPRU:
+     LDA #2
+     STA 882
+     JMP MPD
+
+MPLU:
+     LDA #1
+     STA 882
+     JMP MPD
+
+MPDR:
+     LDA #2
+     STA 882
+     JMP MPU
+
+MPDL:
+     LDA #1
+     STA 882
+     JMP MPU
+
+JOV:
+     LDA #0
+     STA 882
+     LDA #0
+     STA 839
+     JSR CHMTM
+     LDA 839
+     STA 838
+     CLI
+     JMP $EA31
+
+MFR:
+     LDA 56320
+     CMP #121
+     BEQ MPDL
+     CMP #117
+     BEQ MPDR
+     JMP JOV
+
+EMMR:
+     LDA 890
+     CMP #1
+     BEQ MXS
+     JSR RNUM1
+     LDA #1
+     STA 890
+     JSR RNUM2
+     LDA 891
+     STA 53251
+     LDA #232
+     STA 2041
+     LDA 886
+     CMP #1
+     BEQ HBSFM
+     LDA 885
+     CMP #24
+     BCS LBOK
+     LDA #24
+
+LBOK:
+     STA 53250
+     LDA 53264
+     AND #1
+     STA 53264
+     JMP MXS
+
+HBSFM:
+     LDA 885
+     CMP #89
+     BCC LBOK1
+     LDA #89
+
+LBOK1:
+     STA 53250
+     LDA 53264
+     ORA #2
+     STA 53264
+
+MXS:
+     JMP RNUM3
+
+BKO1:
+     RTS
+
+POL2:
+     LDY #0
+     STY 55816
+
+B8:
+     LDA #30
+     STA 1544,Y
+     INY
+     LDA #31
+     STA 1544,Y
+     INY
+     CPY #40
+     BNE B8
+     LDY #0
+
+B9:
+     LDA #31
+     STA 1584,Y
+     INY
+     LDA #30
+     STA 1584,Y
+     INY
+     CPY #40
+     BNE B9
+     LDY #0
+
+B10:
+     LDA #34
+     STA 1624,Y
+     INY
+     LDA #33
+     STA 1624,Y
+     INY
+     CPY #40
+     BNE B10
+     LDY #0
+
+B11:
+     LDA #36
+     STA 1664,Y
+     INY
+     LDA #35
+     STA 1664,Y
+     INY
+     CPY #40
+     BNE B11
+     RTS
+
+IRQ3:
+     SEI
+;POKE 53273,15
+     LDA #30
+     STA 53266
+     LDA #36
+     STA 788
+     LDA #79
+     STA 789
+     LDA 890
+     CMP #0
+     BEQ OVFIR
+     LDA 874
+     CMP #2
+     BEQ G
+     JMP OVFIR
+
+G:
+     LDA 56320
+     CMP #111
+     BEQ FIRE
+     CMP #125
+     BEQ BOMB
+     CMP #110
+     BEQ DSTM
+     JMP OVFIR
+
+FIRE:
+     LDA 53269
+     ORA #8
+     STA 53269
+     LDA #238
+     STA 2043
+     LDA #1
+     STA 893
+     JMP OVFIR
+
+DSTM:
+     LDA 893
+     CMP #0
+     BEQ OVFIR
+     LDA #0
+     STA 53281
+     LDA #0
+     STA 890
+     LDA #245
+     STA 2043
+     STA 2041
+     INC 855
+     LDA #0
+     STA 893
+     LDA #50
+     STA 863
+     JMP OVFIR
+
+BOMB:
+     JSR BMDE
+     OVFIR
+     LDA 890
+     CMP #0
+     BNE V
+     STA 893
+
+V:
+     LDA 53264
+     AND #2
+     CMP #2
+     BEQ SHBMS
+     AND #247
+     STA 53264
+     JMP HMS
+
+SHBMS:
+     LDA 53264
+     ORA #8
+     STA 53264
+
+HMS:
+     LDA 53250
+     STA 53254
+     LDA 53251
+     STA 53255
+     LDA 880
+     CMP #1
+     BNE KKO
+     JSR MTEM
+
+KKO:
+     LDA 890
+     CMP #1
+     BEQ DREM
+     LDA 894
+     CMP #0
+     BNE DREM
+     JSR EMMR
+     LDA 53269
+     ORA #2
+     STA 53269
+
+DREM:
+     DEC 894
+     LDA 895
+     CMP #0
+     BNE COV1
+     JSR XXX
+
+COV1:
+     LDA 895
+     CMP #1
+     BNE COV2
+     LDA 904
+     CMP #0
+     BNE TZ1
+     JSR TX
+
+TZ1:
+     DEC 904
+
+COV2:
+     LDA 251
+     SEC
+     SBC #13
+     STA 903
+     LDA 839
+     CMP #2
+     BNE CHMC2
+     JSR I0
+
+CHMC2:
+     LDA 839
+     CMP #1
+     BNE CHMC3
+     JSR D01
+
+CHMC3:
+     LDA 839
+     CMP #2
+     BNE CHMC4
+     JSR I0
+
+CHMC4:
+     LDA 839
+     CMP #1
+     BNE CHMC5
+     JSR D01
+
+CHMC5:
+     JSR CPVPOS
+     CLI
+     JMP $EA31
+
+SETUP:
+     LDA #1
+     STA 838
+     LDA #1
+     STA 836
+     LDA #6
+     STA 250
+     LDA #0
+     STA 842
+     STA 843
+     LDA #28
+     STA 53272
+     LDA #147
+     JSR $FFD2
+     LDA  #185
+     STA 251
+     LDA #8
+     STA 870
+     STA 871
+     LDA #128
+     STA 53277
+     LDA #130
+     STA 53275
+     LDA #0
+     STA 876
+     LDA #10
+     STA 875
+     LDY #200
+
+BGV:
+     LDA #0
+     STA 55815,Y
+     DEY
+     CPY #0
+     BNE BGV
+     LDA #10
+     STA 904
+     LDA #255
+     STA 53276
+     LDA #0
+     STA 53285
+     LDA #172
+     STA 53248
+     STA 53250
+     LDA #110
+     STA 53249
+     STA 53251
+     LDA #3
+     STA 53269
+     LDA #224
+     STA 2040
+     LDA #250
+     STA 2041
+     LDY #7
+
+B0:
+     LDA #11
+     STA 53287,Y
+     DEY
+     BNE B0
+     LDA #0
+     STA 646
+     CLC
+     LDX #3
+     LDY #13
+     JSR 65520
+     LDY #0
+
+B1:
+     LDA SND,Y
+     JSR $FFD2
+     INY
+     CPY #14
+     BNE B1
+     LDA #12
+     STA 646
+     CLC
+     LDX #12
+     LDY #0
+     JSR 65520
+     LDY #0
+
+B2:
+     LDA MNT,Y
+     JSR $FFD2
+     INY
+     CPY #40
+     BNE B2
+     LDA 880
+     CMP #1
+     BNE TSS
+     RTS
+
+POL1:
+     LDY #0
+
+B3:
+     LDA #31
+     STA 1544,Y
+     INY
+     LDA #30
+     STA 1544,Y
+     INY
+     CPY #40
+     BNE B3
+     LDY #0
+
+B4:
+     LDA #30
+     STA 1584,Y
+     INY
+     LDA #31
+     STA 1584,Y
+     INY
+     CPY #40
+     BNE B4
+     LDY #0
+
+B5:
+     LDA #33
+     STA 1624,Y
+     INY
+     LDA #34
+     STA 1624,Y
+     INY
+     CPY #40
+     BNE B5
+     LDY #0
+
+B6:
+     LDA #35
+     STA 1664,Y
+     INY
+     LDA #36
+     STA 1664,Y
+     INY
+     CPY #40
+     BNE B6
+     RTS
+
+TSS:
+     LDA #25
+     STA 53251
+
+TS1:
+     LDA #1
+     STA 834
+     JSR TDLOOP
+     LDA #7
+     STA 841
+
+TL1:
+     DEC 841
+     INC 2040
+     LDA #45
+     STA 833
+     LDA #1
+     STA 834
+     JSR TDLOOP
+     JMP INCS
+
+LL:
+     LDA 843
+     CMP #1
+     BNE MMV
+     JSR DESTR
+     LDA #1
+     STA 876
+
+MMV:
+     LDA 876
+     CMP #1
+     BEQ JJAA
+     LDA 841
+     CMP #0
+     BNE TL1
+     LDA #224
+     STA 2040
+     JMP TS1
+
+JJAA:
+     LDA #128
+     STA 53269
+
+JJBB:
+     LDA #15
+     STA 833
+     STA 834
+     JSR TDLOOP
+     LDA 251
+     CMP #185
+     BEQ KKNN
+     INC 251
+     LDA 870
+     CMP #8
+     BEQ JJBB
+     INC 870
+     JMP JJBB
+
+KKNN:
+     LDA #128
+     STA 53296
+     LDA #224
+     STA 2040
+
+XYZ:
+     LDA 877
+     STA 646
+     CLC
+     LDX #9
+     LDY #17
+     JSR 65520
+     LDY #0
+
+B20:
+     LDA SNE,Y
+     JSR $FFD2
+     INY
+     CPY #7
+     BNE B20
+     INC 877
+     LDA 877
+     CMP #3
+     BNE JIHI
+     LDA #0
+     STA 877
+
+JIHI:
+     LDA 56320
+     CMP #111
+     BNE XYZ
+     JMP START
+
+INCS:
+     INC 53251
+     LDA 53278
+     CMP #3
+     BNE INO
+     LDA #1
+     STA 843
+
+INO:
+     JMP LL
+
+DESTR:
+     LDA #129
+     STA 53269
+     LDA #247
+     STA 2040
+     LDA #5
+     STA 833
+     LDA #1
+     STA 834
+     LDA #1
+     STA 53271
+
+UUII:
+     LDA 251
+     CMP #185
+     BEQ UO
+     INC 251
+     LDA #5
+     STA 833
+     STA 834
+     JSR TDLOOP
+     JMP UUII
+
+UO:
+     LDA #8
+     STA 878
+
+GG1:
+     DEC 251
+     DEC 878
+     LDA #6
+     STA 833
+     STA 834
+     JSR TDLOOP
+     INC 53249
+     LDA 878
+     CMP #0
+     BNE GG1
+     LDA #6
+     STA 878
+
+GG2:
+     DEC 251
+     DEC 878
+     DEC 870
+     LDA #6
+     STA 833
+     STA 834
+     JSR TDLOOP
+     LDA #246
+     STA 2040
+     INC 53249
+     LDA 878
+     CMP #0
+     BNE GG2
+     LDA #8
+     STA 878
+
+GG3:
+     DEC 251
+     DEC 878
+     LDA #6
+     STA 833
+     STA 834
+     JSR TDLOOP
+     LDA #247
+     STA 2040
+     INC 53249
+     LDA 878
+     CMP #0
+     BNE GG3
+     LDA #158
+     STA 53248
+     LDA 53277
+     ORA #1
+     STA 53277
+     LDA #125
+     STA 53249
+     LDA #10
+     STA 833
+     STA 834
+     LDA #248
+     STA 2040
+     JSR TDLOOP
+     RTS
+
+MTEM:
+     LDA 880
+     CMP #1
+     BEQ MFFM
+     RTS
+
+MFVC:
+     LDA 890
+     CMP #0
+     BEQ CHOUT1
+
+;MOVE MISSLE
+MFFM:
+     INC 892
+     LDA 892
+     CMP #40
+     BNE MXDE1
+     LDA #0
+     STA 892
+     JSR CHMMMM
+
+MXDE1:
+     LDA 53250
+     CMP 53248
+     BEQ MHEP
+     BCS MILP
+     BCC MIRP
+     RTS
+
+MHEP:
+     LDA #0
+     STA 890
+
+MILP:
+     LDA 53250
+     CMP #0
+     BEQ SMTLB
+
+SMTLBD:
+     DEC 53250
+     JMP MMVERT
+
+MIRP:
+     LDA 53264
+     AND #2
+     CMP #2
+     BEQ MILP
+     INC 53250
+     JMP MMVERT
+     RTS
+
+SMTLB:
+     LDA #0
+     STA 53264
+     LDA #255
+     STA 53250
+     JMP SMTLBD
+
+MMVERT:
+     LDA 53251
+     CMP 53249
+     BEQ MMVO
+     BCC MMVD
+     DEC 53251
+     JMP MMVO
+
+MMVD:
+     INC 53251
+
+MMVO:
+     RTS
+
+CHMMMM:
+     LDA 2041
+     CMP #234
+     BEQ CHOUT1
+     INC 2041
+
+CHOUT1:
+     RTS
+
+BMDE:
+     RTS
+     RTS
+
+D01:
+     DEC 53258
+     LDA 53258
+     CMP #60
+     BNE DZ
+     LDA 53269
+     AND #223
+     STA 53269
+     LDA #0
+     STA 896
+
+DZ:
+     RTS
+
+I0:
+     INC 53258
+     LDA 53258
+     CMP #255
+     BNE IO
+     LDA 53269
+     AND #223
+     STA 53269
+     LDA #0
+     STA 896
+
+IO:
+     RTS
+     RTS
+     RTS
+
+DP:
+     LDA 880
+     CMP #1
+     BEQ PKO2
+     RTS
+
+PKO2:
+     LDA 53250
+     CMP 53248
+     BCS DPO
+     DEC 53250
+     DEC 53250
+
+DPO:
+     INC 53250
+     RTS
+
+IP:
+     LDA 880
+     CMP #1
+     BEQ PKO1
+     RTS
+
+PKO1:
+     LDA 53250
+     CMP 53248
+     BCC IPO
+     INC 53250
+     INC 53250
+
+IPO:
+     DEC 53250
+     RTS
+     RTS
+
+CHMTM:
+     LDA 883
+     CMP #0
+     BEQ CHTM
+     DEC 883
+     RTS
+
+CHTM:
+     LDA 2040
+     CMP #226
+     BEQ LA2FBM
+     CMP #230
+     BEQ LA2FBM
+     CMP #229
+     BEQ LA1FBM
+     CMP #227
+     BEQ LA1FBM
+     JMP VXA
+
+LA2FBM:
+     LDA #2
+     STA 883
+     JMP VXZ
+
+LA1FBM:
+     LDA #1
+     STA 883
+     JMP VXZ
+
+VXA:
+     LDA #4
+     STA 883
+
+VXZ:
+     JSR MTEM
+     LDA 2040
+     CMP #228
+     BEQ L4
+     CMP #224
+     BEQ L4
+     CMP #228
+     BCS SMMR
+     LDA 842
+     CMP #1
+     BEQ DRC1
+     LDA #1
+     STA 844
+
+DRC1:
+     LDA #2
+     STA 839
+     JSR IP
+     RTS
+
+SMMR:
+     CMP #232
+     BCS L4
+     LDA #1
+     STA 839
+     LDA 842
+     CMP #1
+     BEQ L4
+     LDA #0
+     STA 844
+     JSR DP
+
+L4:
+     RTS
+
+TDLOOP:
+
+L3:
+     LDY 833
+
+L1:
+     LDX #255
+
+L2:
+     DEX
+     BNE L2
+     DEY
+     BNE L1
+     DEC 834
+     LDA 834
+     BNE L3
+     LDA #0
+     STA 839
+     JSR CCSP
+
+TDOUT:
+     RTS
+
+CPVPOS:
+     LDA #185
+     SEC
+     SBC 251
+     CLC
+     ADC #110
+     STA 53249
+     RTS
+
+CCSP:
+     SEC
+     LDA 251
+     SBC #154
+     
+     CLC
+     ADC #64
+     STA 873
+     RTS
+
+RNUM1:
+     LDA 53269
+     AND #247
+     STA 53269
+     LDA 251
+     ASL
+     ASL
+     CLC
+     ADC #5
+     ADC 251
+     EOR $DC04
+     STA 885
+     ASL
+     EOR $DC04
+     CMP #128
+     BCS SRT0
+     LDA #1
+     STA 886
+     RTS
+
+SRT0:
+     LDA #0
+     STA 886
+     RTS
+
+RNUM4:
+     LDA 251
+     ASL
+     ASL
+     CLC
+     ADC #5
+     ADC 251
+     EOR $DC04
+     ASL
+     EOR $DC04
+     CMP #128
+     BCS SRT1
+     LDA #1
+     STA 886
+     RTS
+
+SRT1:
+     LDA #0
+     STA 900
+     RTS
+
+RNUM2:
+     LDA 251
+     ASL
+     ASL
+     CLC
+     ADC #5
+     ADC 251
+     EOR $DC04
+     EOR $DC04
+     STA 891
+     LDA 891
+     CMP #109
+     BCS RNUM2
+     CLC
+     ADC #50
+     STA 891
+     RTS
+
+RNUM3:
+     LDA 251
+     ASL
+     ASL
+     CLC
+     ADC #7
+     ADC 251
+     EOR $DC04
+     EOR $DC04
+     STA 894
+     RTS
+
+RNUM5:
+     LDA 251
+     ASL
+     ASL
+     CLC
+     ADC #7
+     ADC 251
+     EOR $DC04
+     EOR $DC04
+     STA 901
+     RTS
+
+MCCC:	
+;MOVE CLOUD
+     LDA 842
+     CMP #1
+     BEQ CLOS
+     LDA #1
+     STA 842
+     LDA 844
+     CMP #1
+     BNE MCFL
+     LDA #1
+     STA 842
+     LDA #70
+     STA 53262
+     LDA 873
+     STA 53263
+     LDA #247
+     STA 2047
+     LDA 53269
+     ORA #128
+     STA 53269
+     LDA #1
+     STA 53294
+     LDA #0
+     STA 844
+     RTS
+
+MCFL:
+     LDA #255
+     STA 53262
+     LDA 873
+     STA 53263
+     LDA #247
+     STA 2047
+     LDA 53269
+     ORA #128
+     STA 53269
+     LDA #1
+     STA 53294
+     LDA #1
+     STA 844
+     RTS
+
+CLOS:
+     LDA 844
+     CMP #1
+     BEQ MCTL
+     LDX 870
+
+MCTL1:
+     INC 53262
+     DEX
+     CPX #0
+     BNE MCTL1
+     DEC 53263
+     LDA 53262
+     CMP #163
+     BCS ENCM
+     JSR CHCLC
+     RTS
+
+ENCM:
+     LDA #0
+     STA 842
+     LDA 53269
+     AND #127
+     STA 53269
+     RTS
+
+MCTL:
+     LDX 870
+
+MCTL2:
+     DEC 53262
+     DEX
+     CPX #0
+     BNE MCTL2
+     DEC 53263
+     LDA 53262
+     CMP #163
+     BCC ENCM
+     JSR CHCLC
+     RTS
+
+CHCLC:
+     LDA 53263
+     CMP #85
+     BNE TTYT
+     LDA #246
+     STA 2047
+
+TTYT:
+     CMP #65
+     BNE TTXT
+     LDA #245
+     STA 2047
+
+TTXT:
+     RTS
+
+START:
+     LDA #1
+     STA 880
+     LDA #0
+     STA 53271
+     LDA #131
+     STA 53277
+     JSR SETUP
+     LDA #129
+     STA 53269
+     LDA #0
+     STA 646
+     LDA #3
+     STA 881
+
+SMDRL:
+     CLC
+     LDX 881
+     LDY #13
+     JSR 65520
+     LDY #0
+
+B21:
+     LDA SND,Y
+     JSR $FFD2
+     INY
+     CPY #14
+     BNE B21
+     LDA 881
+     CMP #18
+     BEQ MSO
+     LDA #5
+     STA 833
+     STA 834
+     JSR TDLOOP
+     CLC
+     LDX 881
+     LDY #13
+     JSR 65520
+     LDY #0
+
+B22:
+     LDA #32
+     JSR $FFD2
+     INY
+     CPY #14
+     BNE B22
+     LDA 881
+     CMP #16
+     BCC HFG
+     LDA #1
+     STA 646
+
+HFG:
+     CMP #11
+     BNE HFH
+     INC 881
+
+HFH:
+     INC 881
+     JMP SMDRL
+
+MSO:
+     LDA #1
+     STA 646
+     CLC
+     LDX #20
+     LDY #0
+     JSR 65520
+     LDY #0
+
+Z1:
+     LDA DL1,Y
+     JSR $FFD2
+     INY
+     CPY #34
+     BNE Z1
+     LDA #1
+     STA 646
+     CLC
+     LDX #22
+     LDY #0
+     JSR 65520
+     LDY #0
+
+Z2:
+     LDA DL2,Y
+     JSR $FFD2
+     INY
+     CPY #34
+     BNE Z2
+     LDA #1
+     STA 646
+     CLC
+     LDX #24
+     LDY #16
+     JSR 65520
+     LDY #0
+
+Z3:
+     LDA DL3,Y
+     JSR $FFD2
+     INY
+     CPY #7
+     BNE Z3
+     LDA #1
+     STA 646
+     CLC
+     LDX #0
+     LDY #16
+     JSR 65520
+
+MLOBK:
+XXX:
+     LDA 895
+     CMP #1
+     BEQ COTSC
+     JSR RNUM5
+     LDA 901
+     CMP #10
+     BCC COTSC
+     JSR RNUM4
+     LDA 900
+     CMP #0
+     BEQ DSCHB
+     LDA #35
+     STA 53258
+     JMP CISFM
+
+DSCHB:
+     LDA #255
+     STA 53258
+     JMP CISFM
+
+CISFM:
+     LDA #138
+     STA 53259
+     LDA #1
+     STA 895
+     LDA 53269
+     ORA #32
+     STA 53269
+     LDA #242
+     STA 2045
+     LDA 53277
+     ORA #32
+     STA 53277
+
+COTSC:
+     RTS
+
+TX:
+     LDA #20
+     STA 904
+     LDA 53259
+     CMP 903
+     BCS RMCFSC
+     INC 53259
+     DEC 897
+     LDA 897
+     CMP #0
+     BNE DICG
+     LDA #10
+     STA 897
+     LDA 2045
+     CMP #244
+     BEQ DICG
+     INC 2045
+
+DICG:
+     JMP JZE
+
+RMCFSC:
+     LDA #0
+     STA 895
+     LDA #10
+     STA 897
+     LDA 53269
+     AND #223
+     STA 53269
+
+JZE:
+     RTS
+     RTS
+
+SND:
+     .pet "@AAB C DAEFGHI"
+SNE:
+     .pet "@AAB K1"
+MNT:
+     .pet "%&'('&'()*+*)()*)('&'()()*+*)()('&'('('&"
+DL1:
+     .pet "     KLAM-                  MAPAM-"
+DL2:
+     .pet "     GNOE-                  MNPAE-"
+DL3:
+     .pet "@JHGA-"
+
+
+;     NEXT PASS
+;     PRINT *
+;     END
+     
+     
